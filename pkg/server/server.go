@@ -7,13 +7,15 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	deviceapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -113,31 +115,90 @@ func (s *MicroDeviceServer) Run() error {
 
 // RegisterToKubelet registers the micro device plugin with kubelet
 func (s *MicroDeviceServer) RegisterToKubelet() error {
+	sockFile := filepath.Join(pluginPath + kubeSocket)
+	conn, err := s.dial(sockFile, time.Second*5)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client := deviceapi.NewRegistrationClient(conn)
+	req := &deviceapi.RegisterRequest{
+		Version:      deviceapi.Version,
+		Endpoint:     path.Base(pluginPath + microSocket),
+		ResourceName: resourceName,
+	}
+	slog.Info("Register plugin to kubelet", "endpoint", req.Endpoint)
+	_, err = client.Register(context.Background(), req)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-// Allocate .
+// Allocate make the device avilable in container
 func (s *MicroDeviceServer) Allocate(ctx context.Context, reqs *deviceapi.AllocateRequest) (*deviceapi.AllocateResponse, error) {
-	return nil, nil
+	result := &deviceapi.AllocateResponse{}
+	for _, req := range reqs.ContainerRequests {
+		slog.Info("received request", "data", req)
+		resp := deviceapi.ContainerAllocateResponse{
+			Envs: map[string]string{
+				"MICRO_DEVICES": strings.Join(req.DevicesIDs, ","),
+			},
+		}
+		result.ContainerResponses = append(result.ContainerResponses, &resp)
+	}
+	return result, nil
 }
 
 // ListAndWatch return a stream of list devices and update that stream whenever changes
 func (s *MicroDeviceServer) ListAndWatch(e *deviceapi.Empty, srv deviceapi.DevicePlugin_ListAndWatchServer) error {
-	return nil
+	slog.Info("ListAndWatch started")
+	devs := make([]*deviceapi.Device, len(s.devices))
+	i := 0
+	for _, dev := range s.devices {
+		devs[i] = dev
+		i++
+	}
+	err := srv.Send(&deviceapi.ListAndWatchResponse{Devices: devs})
+	if err != nil {
+		slog.Error("ListAndWatch send device failed", "error", err)
+		return err
+	}
+
+	for {
+		slog.Info("waiting for device change ...")
+		select {
+		case <-s.notify:
+			slog.Info("device change detected", "num", len(s.devices))
+			devs := make([]*deviceapi.Device, len(s.devices))
+			i := 0
+			for _, dev := range s.devices {
+				devs[i] = dev
+				i++
+			}
+			srv.Send(&deviceapi.ListAndWatchResponse{Devices: devs})
+		case <-s.ctx.Done():
+			slog.Info("ListAndWatch exited")
+			return nil
+		}
+	}
 }
 
 // GetDevicePluginOptions return options for the device plugin
-func (s *MicroDeviceServer) GetDevicePluginOptions(context.Context, *v1beta1.Empty) (*deviceapi.DevicePluginOptions, error) {
+func (s *MicroDeviceServer) GetDevicePluginOptions(context.Context, *deviceapi.Empty) (*deviceapi.DevicePluginOptions, error) {
 	return &deviceapi.DevicePluginOptions{PreStartRequired: true}, nil
 }
 
 // GetPreferredAllocation return the devices chosen for allocation based on the given options
 func (s *MicroDeviceServer) GetPreferredAllocation(context.Context, *deviceapi.PreferredAllocationRequest) (*deviceapi.PreferredAllocationResponse, error) {
+	slog.Info("GetPreferredAllocation executed")
 	return nil, nil
 }
 
 // PreStartContainer is called during the device plugin pod starting
 func (s *MicroDeviceServer) PreStartContainer(context.Context, *deviceapi.PreStartContainerRequest) (*deviceapi.PreStartContainerResponse, error) {
+	slog.Info("PreStartContainer executed")
 	return &deviceapi.PreStartContainerResponse{}, nil
 }
 
