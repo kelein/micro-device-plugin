@@ -8,13 +8,21 @@ import (
 	"github.com/kelein/micro-device-plugin/pkg/server"
 )
 
+type logFmt uint32
+
+// Log Output Format
+const (
+	JSON logFmt = iota
+	TEXT
+)
+
 func init() {
-	initLogger()
+	initLogger(TEXT)
 }
 
-func initLogger() {
+func initLogger(f logFmt) {
 	replace := func(groups []string, a slog.Attr) slog.Attr {
-		// Remove the directory from the source's filename.
+		// Use short source filename
 		if a.Key == slog.SourceKey {
 			source := a.Value.Any().(*slog.Source)
 			source.File = filepath.Base(source.File)
@@ -22,20 +30,18 @@ func initLogger() {
 		return a
 	}
 
-	// * JSON Log Format
-	// logger := slog.New(slog.NewJSONHandler(
-	// 	os.Stdout, &slog.HandlerOptions{AddSource: true},
-	// ))
-
-	// * Text Log Format
-	logger := slog.New(slog.NewTextHandler(
-		os.Stdout, &slog.HandlerOptions{
-			AddSource:   true,
-			ReplaceAttr: replace,
-		},
-	))
-
-	slog.SetDefault(logger)
+	var h slog.Handler
+	opts := slog.HandlerOptions{
+		AddSource:   true,
+		ReplaceAttr: replace,
+	}
+	switch f {
+	case JSON:
+		h = slog.NewJSONHandler(os.Stdout, &opts)
+	case TEXT:
+		h = slog.NewTextHandler(os.Stdout, &opts)
+	}
+	slog.SetDefault(slog.New(h))
 }
 
 func main() {
