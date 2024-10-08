@@ -1,2 +1,7 @@
-# my-clean-arch
-Clean arch repo template - https://github.com/kelein/my-clean-arch
+# micro-device-plugin
+
+> A tiny sample for kubenertest device plugin framework.
+
+## Build
+
+## Deploy
