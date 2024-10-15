@@ -29,3 +29,6 @@
 
 # Project-local glide cache
 .glide
+
+# Binary Files
+bin
