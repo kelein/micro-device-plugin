@@ -23,8 +23,12 @@ const (
 	resourceName = "micro.plugin"
 	microPath    = "/etc/micro"
 	microSocket  = "micro.sock"
-	kubeSocket   = "kubelet.sock"
-	pluginPath   = "/var/lib/kubelet/device-plugins"
+
+	// KubeSocket kubelet unix socket
+	KubeSocket = "kubelet.sock"
+
+	// PluginPath device defautl path
+	PluginPath = "/var/lib/kubelet/device-plugins/"
 )
 
 const (
@@ -65,17 +69,17 @@ func (s *MicroDeviceServer) Run() error {
 	go func() {
 		err := s.watchDevice()
 		if err != nil {
-			slog.Error("watch device", "err", err)
+			slog.Error("watch device failed", "err", err)
 		}
 	}()
 
 	deviceapi.RegisterDevicePluginServer(s.serv, s)
-	err := syscall.Unlink(pluginPath + microSocket)
+	err := syscall.Unlink(PluginPath + microSocket)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	listener, err := net.Listen("unix", pluginPath+microSocket)
+	listener, err := net.Listen("unix", PluginPath+microSocket)
 	if err != nil {
 		return err
 	}
@@ -115,7 +119,7 @@ func (s *MicroDeviceServer) Run() error {
 
 // RegisterToKubelet registers the micro device plugin with kubelet
 func (s *MicroDeviceServer) RegisterToKubelet() error {
-	sockFile := filepath.Join(pluginPath + kubeSocket)
+	sockFile := filepath.Join(PluginPath + KubeSocket)
 	conn, err := s.dial(sockFile, time.Second*5)
 	if err != nil {
 		return err
@@ -125,7 +129,7 @@ func (s *MicroDeviceServer) RegisterToKubelet() error {
 	client := deviceapi.NewRegistrationClient(conn)
 	req := &deviceapi.RegisterRequest{
 		Version:      deviceapi.Version,
-		Endpoint:     path.Base(pluginPath + microSocket),
+		Endpoint:     path.Base(PluginPath + microSocket),
 		ResourceName: resourceName,
 	}
 	slog.Info("Register plugin to kubelet", "endpoint", req.Endpoint)

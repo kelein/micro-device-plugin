@@ -6,7 +6,9 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kelein/micro-device-plugin/pkg/server"
@@ -71,6 +73,34 @@ func main() {
 		return
 	}
 	slog.Error("micro device plugin register successfully")
+
+	sock := filepath.Join(server.PluginPath, server.KubeSocket)
+	slog.Info("device plugin socket", "name", sock)
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		slog.Error("create fsnotify watcher failed", "err", err)
+		os.Exit(1)
+		return
+	}
+	defer w.Close()
+
+	if err := w.Add(server.PluginPath); err != nil {
+		slog.Error("watch kublet failed", "err", err)
+		return
+	}
+
+	slog.Info("watching kubelet.sock ...")
+	for {
+		select {
+		case event := <-w.Events:
+			if event.Name == sock && event.Op&fsnotify.Create == fsnotify.Create {
+				time.Sleep(time.Second)
+				slog.Error("[fsnotify] socket file created kubelet may restarting", "name", sock)
+			}
+		case err := <-w.Errors:
+			slog.Error("fsnotify", "err", err)
+		}
+	}
 }
 
 func showVersion() {
