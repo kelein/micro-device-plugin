@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	github.com/prometheus/client_golang v1.20.5
 	google.golang.org/grpc v1.68.1
-	k8s.io/kubelet v0.31.3
+	k8s.io/kubelet v0.31.4
 )
 
 require (
