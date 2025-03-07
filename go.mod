@@ -3,7 +3,7 @@ module github.com/kelein/micro-device-plugin
 go 1.23.2
 
 require (
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	google.golang.org/grpc v1.71.0
 	k8s.io/kubelet v0.32.2
 )
