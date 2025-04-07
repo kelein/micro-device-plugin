@@ -1,6 +1,7 @@
 module github.com/kelein/micro-device-plugin
 
 go 1.23.2
+
 toolchain go1.24.1
 
 require (
@@ -19,7 +20,7 @@ require (
 )
 
 require (
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gogo/protobuf v1.3.2 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
