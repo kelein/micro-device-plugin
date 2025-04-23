@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/prometheus/client_golang v1.22.0
 	google.golang.org/grpc v1.72.0
-	k8s.io/kubelet v0.32.3
+	k8s.io/kubelet v0.32.4
 )
 
 require (
