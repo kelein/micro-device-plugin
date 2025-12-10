@@ -72,5 +72,5 @@ gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntN
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
-k8s.io/kubelet v0.34.1 h1:doAaTA9/Yfzbdq/u/LveZeONp96CwX9giW6b+oHn4m4=
-k8s.io/kubelet v0.34.1/go.mod h1:PtV3Ese8iOM19gSooFoQT9iyRisbmJdAPuDImuccbbA=
+k8s.io/kubelet v0.34.3 h1:8QRev2FmasZ05yCC774qn6ULche72PYM7AQv0CVt9CM=
+k8s.io/kubelet v0.34.3/go.mod h1:pMgblr+nVQ02UkyaTcgqzS3AIYVQkjlMFg1Pd5rGC1Q=
